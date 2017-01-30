@@ -17,7 +17,7 @@ dir_reverse = {'u': 'd', 'r': 'l', 'd': 'u', 'l': 'r',
 
 # direction symbols used in the Maze visualizatrion (plotting the path)
 
-symbol_move = {'u': '^', 'r': '>', 'd': 'v', 'l': '<',
+directions = {'u': '^', 'r': '>', 'd': 'v', 'l': '<',
                'up': '^', 'right': '>', 'down': 'v', 'left': '<'}
                
 # index of the 4-wall: more specifically it is the index of the direction
@@ -25,6 +25,9 @@ symbol_move = {'u': '^', 'r': '>', 'd': 'v', 'l': '<',
 wall_index = {'u': 0, 'r': 1, 'd': 2, 'l': 3,
               'up': 0, 'right': 1, 'down': 2, 'left': 3}
 
+
+wall_reverse = {'u': 2, 'r': 3, 'd': 0, 'l': 1,
+              'up': 2, 'right': 3, 'down': 2, 'left': 1}
 
 WALL_VALUE = 10000
 MAX_DISTANCES = [WALL_VALUE, WALL_VALUE, WALL_VALUE, WALL_VALUE]

@@ -30,7 +30,7 @@ class Cell:
         '''
         all_walls = [0,0,0,0]
         for i in range(len(self.real_walls)):
-            if self.real_walls == 1 or self.virtual_walls == 1:
+            if self.real_walls[i] == 1 or self.virtual_walls[i] == 1:
                 all_walls[i] = 1
         return all_walls
     '''
