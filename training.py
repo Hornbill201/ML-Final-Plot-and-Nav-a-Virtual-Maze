@@ -87,6 +87,8 @@ class Train:
         self.update_dist()
         
     def get_dist(self, x, y, direction, steps = 1):
+        # get the distance of the cell of next move
+    
         walls = self.grid[x][y].get_all_walls()
         dist = WALL_VALUE
         
@@ -115,19 +117,189 @@ class Train:
                 dist = cell.distance
         
         return dist
+        
+    def get_visited(self, x, y, direction, steps= 1):
+        # get the visited-flag of the cell of next move
+    
+        walls = self.grid[x][y].get_all_walls()
+        visited = ''
+        
+        # up
+        if direction == '0' or direction == 'up':
+            if walls[wall_index['u']] == 0 and self.is_valid_togo(x,y+steps):
+                visited = self.grid[x][y+steps].visited
+        
+        # right
+        if direction == '1' or direction == 'right':
+            if walls[wall_index['r']] == 0 and self.is_valid_togo(x+steps,y):
+                visited = self.grid[x+steps][y].visited
+        
+        # down
+        if direction == '2' or direction == 'down':
+            if walls[wall_index['d']] == 0 and self.is_valid_togo(x,y-steps):
+                visited = self.grid[x][y-steps].visited
+        
+        # left
+        if direction == '3' or direction == 'left':
+            if walls[wall_index['l']] == 0 and self.is_valid_togo(x-steps,y):
+                visited = self.grid[x-steps][y].visited
+        
+        return visited
+
+    def get_adjacent(self, x,y, heading, sensors, get_behind = True):
+        '''
+        return the information of the four adjacent cells 
+        including the distance and the vistied flags
+        with the visual of the robot (left, up(ahead), right, down(behind))
+        relative directions
+        '''
+        
+        distances = MAX_DISTANCES
+        visited = ['']*4
+        
+        for i in range(len(sensors)):
+            if sensors[i] != 0:
+                dir_sensor = dir_sensors[heading][i]
+                distances[i] = self.get_visited(x,y,dir_sensor)
+                visited[i] = self.get_visited(x,y,dir_sensor)
                 
-
-
-
-
-
+        # update the cell behind the robot
+        if get_behind:
+            behind = dir_reverse[heading]
+            distances[3] = self.get_dist(x,y,behind)
+            visited[3] = self.get_visited(x,y,behind)
+                
+        return distances, visited 
+        
+        
+    def get_adj_dist(self, x, y):
+        '''
+        get the distances of adjacent of current cells
+        absolute directions
+        '''
+        distances = [0,0,0,0]
+        distances[0] = self.get_dist(x,y,'up')
+        distances[1] = self.get_dist(x,y,'right')
+        distances[2] = self.get_dist(x,y,'down')
+        distances[3] = self.get_dist(x,y,'left')
+        
+        return distances
+        
+    
+    def update_dist(self, last_update = False):
+        
+        if last_update:
+            cells_check = self.visited_before_reaching_destination
+            
+        else:
+            cells_check = self.cells_to_check
+        
+        while len(cells_check) > 0:
+            current_cell = cells_check.pop()
+            
+            x = current_cell[0]
+            y = current_cell[1]
+            
+            cur_dist = self.grid[x][y].distance
+            
+            adj_distances = self.get_adj_dist(x,y)
+            min_dist = min(adj_distances)
+            
+            if cur_dist != min_dist+1 and cur_dist != WALL_VALUE:
+                self.grid[x][y] = min_dist+1
+                
+                for i, adj_distance in enumerate(adj_distances):
+                    if adj_distance != WALL_VALUE:
+                        # up
+                        if i == 0:
+                            x_add = x
+                            y_add = y+1
+                        # right
+                        elif i == 1:
+                            x_add = x+1
+                            y_add = y
+                        #down
+                        elif i == 2:
+                            x_add = x
+                            y_add = y-1
+                        else:
+                            x_add = x-1
+                            y_add = y
+                        
+                        cell_add = self.grid[x_add][y_add]
+                        if cell_add.visited != 'd' and self.is_valid_togo(x_add, y_add):
+                            cell_location = [x_add, y_add]
+                            self.cells_to_check.append(cell_location)
+                            
 
 
     def is_valid_togo(self, x, y):
         return 0 <= x <= self.maze_dim - 1 and 0 <= y <= self.maze_dim - 1
 
+    
+    
+    def reset_visited(self):
+        for x in range(self.maze_dim):
+            for y in range(self.maze_dim):
+                self.grid[x][y].visited = ''
+    
+    def update_adj_walls(self, x, y, walls, wall_type):
+        
+        # up
+        if self.is_valid_togo(x,y+1):
+            wall = wall_reverse['up']
+            new_x = x
+            new_y = y+1
+            value = walls[0]
+            self.set_wall(new_x, new_y, value, wall, wall_type)
+        
+        # right
+        if self.is_valid_togo(x+1,y):
+            wall = wall_reverse['right']
+            new_x = x+1
+            new_y = y
+            value = walls[1]
+            self.set_wall(new_x, new_y, value, wall, wall_type)
+        
+        # down
+        if self.is_valid_togo(x,y-1):
+            wall = wall_reverse['down']
+            new_x = x
+            new_y = y-1
+            value = walls[2]
+            self.set_wall(new_x, new_y, value, wall, wall_type)
+        
+        # left
+        if self.is_valid_togo(x-1,y):
+            wall = wall_reverse['left']
+            new_x = x-1
+            new_y = y
+            value = walls[3]
+            self.set_wall(new_x, new_y, value, wall, wall_type)
+        
+        
+    def set_wall(self, x, y, value, wall_ind, wall_type):
+        '''
+        set the value of rean and virtual walss for a cell
+        '''
+        if wall_type == 'real':
+            self.grid[x][y].real_walls[wall_ind] = value
+        elif wall_type == 'virtual':
+            self.grid[x][y].virtual_walls[wall_ind] = value
 
-
+    
+    def set_virtual_walls_for_unvisited(self):
+        '''
+        after the first round, we all virtual walls to all the unvisited cells
+        '''
+        for x in range(self.maze_dim):
+            for y in range(self.maze_dim):
+                cell = self.grid[x][y]
+                if cell.visited == '':
+                    cell.distance = WALL_VALUE
+                    for i in range(4):
+                        cell.virtual_walls[i] = 1
+    
 
 
 
