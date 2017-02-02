@@ -188,6 +188,30 @@ class Robot(object):
                 num_of_walls += 1
         return num_of_walls
         
+    # movement
+    def get_next_move(self, x, y, heading, sensors):
+        if self.reach_dest and self.explore:
+            rotation, movement = self.explore(x,y,heading,sensors)
+            self.moves_explore += 1
+        
+        elif not self.reach_dest and not self.explore:
+            if self.algorithm.name  == 'flood-fill' and self.is_at_deadend(sensors):
+                rotation, movement = self.act_on_deadend(x, y, heading)
+            else:
+                adj_distances, adj_visited = self.training.get_adjacent(x, y, heading, sensors)
+                valid_index = self.algorithm.get_feasible_dir(adj_distances, adj_visited)
+                rotation, movement = self.convert_index_to_dir(valid_index)
+            self.move_round_1 += 1
+        
+        else:
+            if self.move_round_2 == 0:
+                print "--------- Final Report ---------"
+                self.training.draw()
+            rotation, movement = self.second_round(x,y,heading,sensors)
+            self.move_round_2 += 1
+        return rotation, movement
+    
+    
         
                 
             
