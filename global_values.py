@@ -22,13 +22,14 @@ directions = {'u': '^', 'r': '>', 'd': 'v', 'l': '<',
                
 # index of the 4-wall: more specifically it is the index of the direction
 
-wall_index = {'u': 0, 'r': 1, 'd': 2, 'l': 3,
-              'up': 0, 'right': 1, 'down': 2, 'left': 3}
+wall_index = {'l': 0, 'u': 1, 'r': 2, 'd': 3,
+              'left': 0, 'up': 1, 'right': 2, 'down': 3}
 
 
-wall_reverse = {'u': 2, 'r': 3, 'd': 0, 'l': 1,
-              'up': 2, 'right': 3, 'down': 2, 'left': 1}
+wall_reverse = {'u': 3, 'r': 0, 'd': 1, 'l': 2,
+              'up': 3, 'right': 0, 'down': 1, 'left': 2}
 
 WALL_VALUE = 10000
 MAX_DISTANCES = [WALL_VALUE, WALL_VALUE, WALL_VALUE, WALL_VALUE]
 
+rotations = {'0': -90, '1': 0, '2': 90}

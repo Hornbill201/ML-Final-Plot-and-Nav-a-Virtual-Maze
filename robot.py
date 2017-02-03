@@ -1,9 +1,8 @@
-import numpy as np
-from global_values import (dir_move, dir_reverse, dir_sensors, wall_reverse,
-                              directions, wall_index, MAX_DISTANCES,
-                              WALL_VALUE)
+import sys
+from global_values import (dir_move, dir_reverse, dir_sensors, wall_index, MAX_DISTANCES,
+                              WALL_VALUE, rotations)
 from training import Training                              
-
+from algorithms import FloodFill, RightFirst, NewFirst
 
 
 class Robot(object):
@@ -46,8 +45,8 @@ class Robot(object):
             raise ValueError(
                 "Incorrect algorithm name. Options are: "
                 "\n- 'ff': flood-fill"
-                "\n- 'rf': keep-right"
-                "\n- 'nf': modified-right (prefers unvisited cells)"
+                "\n- 'rf': right-first"
+                "\n- 'nf': new-first"
             )        
         
                 # Explore after reaching center of the maze:
@@ -106,8 +105,8 @@ class Robot(object):
         
         else:
             self.training.cells_to_check.append([x,y])
-            if [x,y] not in self.visited_before_reaching_destination:
-                self.visited_before_reaching_destination.append([x,y])
+            if [x,y] not in self.training.visited_before_reaching_destination:
+                self.training.visited_before_reaching_destination.append([x,y])
                 
             self.training.update(x,y,heading, walls, self.explore)
                 
@@ -149,7 +148,7 @@ class Robot(object):
     
     def current_walls(self, x, y, heading, sensors):
         if self.is_starting_location(x,y):
-            walls = [0,1,1,1]
+            walls = [1,0,1,1]
             
         elif self.training.grid[x][y].visited != '':
             walls = self.training.grid[x][y].get_all_walls()
@@ -274,7 +273,7 @@ class Robot(object):
             if valid_index is None:
                 possible_candidate = None
                 for i, dist in enumerate(adj_distances):
-                    if dist != -1 and adj_visited[i] is 'e':
+                    if dist != -1 and adj_visited[i] == 'e':
                         if possible_candidate is None:
                             possible_candidate = i
                         else:

@@ -12,11 +12,11 @@ from global_values import (dir_reverse, dir_sensors, wall_reverse,
                               WALL_VALUE)
                               
                               
-class Train:
+class Training:
     def __init__(self, maze_dim):
         self.maze_dim = maze_dim
         self.grid = [[Cell() for i in range(maze_dim)] for j in range(maze_dim)]
-        self.init_distances()
+        self.init_distance()
         self.last_visited_cell = None
         self.cells_to_check = []
         self.visited_before_reaching_destination = []
@@ -93,25 +93,25 @@ class Train:
         dist = WALL_VALUE
         
         # up
-        if direction == '0' or direction == 'up':
+        if direction == 'u' or direction == 'up':
             if walls[wall_index['u']] == 0 and self.is_valid_togo(x,y+steps):
                 cell = self.grid[x][y+steps]
                 dist = cell.distance
         
         # right
-        if direction == '1' or direction == 'right':
+        if direction == 'r' or direction == 'right':
             if walls[wall_index['r']] == 0 and self.is_valid_togo(x+steps,y):
                 cell = self.grid[x+steps][y]
                 dist = cell.distance
         
         # down
-        if direction == '2' or direction == 'down':
+        if direction == 'd' or direction == 'down':
             if walls[wall_index['d']] == 0 and self.is_valid_togo(x,y-steps):
                 cell = self.grid[x][y-steps]
                 dist = cell.distance
         
         # left
-        if direction == '3' or direction == 'left':
+        if direction == 'l' or direction == 'left':
             if walls[wall_index['l']] == 0 and self.is_valid_togo(x-steps,y):
                 cell = self.grid[x-steps][y]
                 dist = cell.distance
@@ -125,22 +125,22 @@ class Train:
         visited = ''
         
         # up
-        if direction == '0' or direction == 'up':
+        if direction == 'u' or direction == 'up':
             if walls[wall_index['u']] == 0 and self.is_valid_togo(x,y+steps):
                 visited = self.grid[x][y+steps].visited
         
         # right
-        if direction == '1' or direction == 'right':
+        if direction == 'r' or direction == 'right':
             if walls[wall_index['r']] == 0 and self.is_valid_togo(x+steps,y):
                 visited = self.grid[x+steps][y].visited
         
         # down
-        if direction == '2' or direction == 'down':
+        if direction == 'd' or direction == 'down':
             if walls[wall_index['d']] == 0 and self.is_valid_togo(x,y-steps):
                 visited = self.grid[x][y-steps].visited
         
         # left
-        if direction == '3' or direction == 'left':
+        if direction == 'l' or direction == 'left':
             if walls[wall_index['l']] == 0 and self.is_valid_togo(x-steps,y):
                 visited = self.grid[x-steps][y].visited
         
@@ -178,10 +178,11 @@ class Train:
         absolute directions
         '''
         distances = [0,0,0,0]
-        distances[0] = self.get_dist(x,y,'up')
-        distances[1] = self.get_dist(x,y,'right')
-        distances[2] = self.get_dist(x,y,'down')
-        distances[3] = self.get_dist(x,y,'left')
+        distances[0] = self.get_dist(x,y,'left')
+        distances[1] = self.get_dist(x,y,'up')
+        distances[2] = self.get_dist(x,y,'right')
+        distances[3] = self.get_dist(x,y,'down')
+        
         
         return distances
         
@@ -210,21 +211,21 @@ class Train:
                 
                 for i, adj_distance in enumerate(adj_distances):
                     if adj_distance != WALL_VALUE:
-                        # up
+                        # left
                         if i == 0:
+                            x_add = x-1
+                            y_add = y
+                        # up
+                        elif i == 1:
                             x_add = x
                             y_add = y+1
                         # right
-                        elif i == 1:
+                        elif i == 2:
                             x_add = x+1
                             y_add = y
-                        #down
-                        elif i == 2:
+                        else:
                             x_add = x
                             y_add = y-1
-                        else:
-                            x_add = x-1
-                            y_add = y
                         
                         cell_add = self.grid[x_add][y_add]
                         if cell_add.visited != 'd' and self.is_valid_togo(x_add, y_add):
@@ -250,7 +251,7 @@ class Train:
             wall = wall_reverse['up']
             new_x = x
             new_y = y+1
-            value = walls[0]
+            value = walls[1]
             self.set_wall(new_x, new_y, value, wall, wall_type)
         
         # right
@@ -258,7 +259,7 @@ class Train:
             wall = wall_reverse['right']
             new_x = x+1
             new_y = y
-            value = walls[1]
+            value = walls[2]
             self.set_wall(new_x, new_y, value, wall, wall_type)
         
         # down
@@ -266,7 +267,7 @@ class Train:
             wall = wall_reverse['down']
             new_x = x
             new_y = y-1
-            value = walls[2]
+            value = walls[3]
             self.set_wall(new_x, new_y, value, wall, wall_type)
         
         # left
@@ -274,7 +275,7 @@ class Train:
             wall = wall_reverse['left']
             new_x = x-1
             new_y = y
-            value = walls[3]
+            value = walls[0]
             self.set_wall(new_x, new_y, value, wall, wall_type)
         
         
@@ -300,7 +301,64 @@ class Train:
                     for i in range(4):
                         cell.virtual_walls[i] = 1
     
+    # drawing the maze
+    
+    def print_row(self, cells, include_delimiters = True):
+        if include_delimiters:
+            roof = ''
+            frame = '\n'
+            floor = '\n'
+            
+            for cell in cells:
+                roof += cell.roof()
+                frame += cell.frame()
+                floor += cell.floor()
+            res = roof + frame + floor
+        else:
+            frame = ''
+            for cell in cells:
+                frame += cell.frame()
+            res = frame
+        
+        print(res)
+        
+    def print_row_overlap(self, cells):
+        roof = ''
+        frame = '\n'
+        floor = '\n'
+            
+        for cell in cells:
+            roof += cell.roof()
+            frame += cell.frame()
+            floor += cell.floor()
+        res = roof + frame + floor
+    
+        print(res)
+    
+    def draw(self):
+        rows = []
+        for i in range(self.maze_dim):
+            rows.append([x[i] for x in self.grid])
 
+        print_delimiters = True
+        for i, row in enumerate(reversed(rows)):
+            self.print_row(row, print_delimiters)
+            print_delimiters = not print_delimiters  # Flip value
+            
+    
+    def draw_overlap(self):
+        rows = []
+        for i in range(self.maze_dim):
+            rows.append([x[i] for x in self.grid])
+
+        for i, row in enumerate(reversed(rows)):
+            self.print_row_overlap(row)
+
+    def get_percentage_of_maze_explored(self):
+        num_cells_in_maze = self.maze_dim * self.maze_dim
+        num_cells_explored = len(self.visited_before_reaching_destination)
+        return (num_cells_explored * 100) / num_cells_in_maze
+    
 
 
 

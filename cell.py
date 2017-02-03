@@ -48,9 +48,9 @@ class Cell:
         return: return the strucure of the roof
         '''
         roof_line = '+'
-        if self.real_walls[0]:
+        if self.real_walls[1]:
             roof_line += ' --- '
-        elif self.virtual_walls[0]:
+        elif self.virtual_walls[1]:
             roof_line += ' ... '
         else:
             roof_line += '     '
@@ -72,9 +72,9 @@ class Cell:
             distance = str(self.distance)
         
         frame_wall = ''
-        if self.real_walls[3]:
+        if self.real_walls[0]:
             frame_wall += '|'
-        elif self.virtual_walls[3]:
+        elif self.virtual_walls[0]:
             frame_wall += ':'
         else:
             frame_wall += ' '
@@ -90,9 +90,9 @@ class Cell:
         frame_wall += ' '
             
         if overlap:
-            if self.real_walls[1]:
+            if self.real_walls[2]:
                 frame_wall += '|'
-            elif self.virtual_walls[1]:
+            elif self.virtual_walls[2]:
                 frame_wall += ':'
             else:
                 frame_wall += ' '
@@ -107,9 +107,9 @@ class Cell:
         return: return the strucure of the floor
         '''
         floor_line = '+'
-        if self.real_walls[2]:
+        if self.real_walls[3]:
             floor_line += ' --- '
-        elif self.virtual_walls[2]:
+        elif self.virtual_walls[3]:
             floor_line += ' ... '
         else:
             floor_line += '     '
