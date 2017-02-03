@@ -29,6 +29,7 @@ class Robot(object):
         self.reach_dest = False
         self.explore = False
         self.moves_explore = 0
+        self.consecutive_explored_cells = 0
         
         self.training = Training(maze_dim)
              
@@ -49,7 +50,17 @@ class Robot(object):
                 "\n- 'nf': modified-right (prefers unvisited cells)"
             )        
         
-        
+                # Explore after reaching center of the maze:
+        if str(sys.argv[3]).lower() == 'true':
+            self.explore_after_center = True
+        elif str(sys.argv[3]).lower() == 'false':
+            self.explore_after_center = False
+        else:
+            raise ValueError(
+                "Incorrect explore value: Options are: "
+                "\n- 'true': to keep exploring after reaching the center"
+                "\n- 'false': to end run immediately after reaching the center"
+            )
         
         
         
@@ -191,7 +202,7 @@ class Robot(object):
     # movement
     def get_next_move(self, x, y, heading, sensors):
         if self.reach_dest and self.explore:
-            rotation, movement = self.explore(x,y,heading,sensors)
+            rotation, movement = self.explore_after(x,y,heading,sensors)
             self.moves_explore += 1
         
         elif not self.reach_dest and not self.explore:
@@ -211,14 +222,209 @@ class Robot(object):
             self.move_round_2 += 1
         return rotation, movement
     
+    def get_valid_index(self, x, y, heading, sensors, explore):
+        if not explore:
+            adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors)\
+            
+            valid_index = adj_distances.index(min(adj_distances))
+            
+            possible_distance = WALL_VALUE
+            best_index = WALL_VALUE
+            
+            for i, dist in enumerate(adj_distances):
+                if dist != WALL_VALUE and adj_visited == '':
+                    if dist <= possible_distance:
+                        best_index = i
+                        if best_index == 1:
+                            break
+            if best_index != WALL_VALUE:
+                valid_index = best_index
+        
+        else:
+            adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors)
+                        # Convert WALL_VALUES to -1 (robot will follow max distance)
+            adj_distances = [-1 if dist == WALL_VALUE else dist for dist in
+                             adj_distances]
+
+            # Get max index (guaranteed to not be a wall)
+            valid_index = None
+
+            # Prefer cells that have not been visited
+            for i, dist in enumerate(adj_distances):
+                if dist != -1 and adj_visited[i] is '':
+                    self.consecutive_explored_cells = 0
+                    valid_index = i
+                    break
+
+            if valid_index is None:
+                self.consecutive_explored_cells += 1
+                possible_candidate = None
+                for i, dist in enumerate(adj_distances):
+                    if dist != -1 and adj_visited[i] is '*':
+                        if possible_candidate is None:
+                            possible_candidate = i
+                        else:
+                            a = adj_distances[possible_candidate]
+                            b = adj_distances[i]
+                            if b > a:
+                                possible_candidate = i
+
+                valid_index = possible_candidate
+
+            if valid_index is None:
+                possible_candidate = None
+                for i, dist in enumerate(adj_distances):
+                    if dist != -1 and adj_visited[i] is 'e':
+                        if possible_candidate is None:
+                            possible_candidate = i
+                        else:
+                            a = adj_distances[possible_candidate]
+                            b = adj_distances[i]
+                            if b > a:
+                                possible_candidate = i
+
+                valid_index = possible_candidate
+
+        return valid_index
     
-        
+    def convert_from_index(self, index):
+        # Move Left
+        if index == 0:
+            rotation = -90
+            movement = 1
+        # Move Up
+        elif index == 1:
+            rotation = 0
+            movement = 1
+        # Move Right
+        elif index == 2:
+            rotation = 90
+            movement = 1
+        # Minimum distance is behind, so just rotate clockwise
+        else:
+            rotation = 90
+            movement = 0
+
+        return rotation, movement
                 
+    def explore_after(self, x, y, heading, sensors):
+        
+        if self.should_end_exploring(x, y) or not self.explore_after_center:
+            rotation = 'Reset'
+            movement = 'Reset'
+            self.explore = False
+            self.terrain.set_virtual_walls_for_unvisited()
+            self.terrain.update_dist(last_update=True)
+
+        else:
+
+            # If we reach a dead end:
+            if self.is_at_deadend(sensors):
+                rotation, movement = self.deal_with_deadend(x, y, heading)
+
+            else:
+                valid_index = self.get_valid_index(x, y, heading, sensors, True)
+                if valid_index is not None:
+                    rotation, movement = self.convert_from_index(valid_index)
+                else:
+                    rotation, movement = 'Reset', 'Reset'
+
+        return rotation, movement       
+        
+    def deal_with_deadend(self, x, y, heading):
+        rotation = 0
+        movement = -1
+        
+        cell = self.training.grid[x][y]
+        
+        reverse_direction = dir_reverse[heading]
+        index = wall_index[reverse_direction]
+        cell.virtual_walls[index] = 1
+        
+        cell.visited = 'd'
+        cell.distance = WALL_VALUE
+        
+        self.training.update_virtual_walls(x,y,cell.virtual_walls)
+        
+        return rotation, movement
+        
+    def should_end_exploring(self, x, y):
+        
+        if self.terrain.get_percentage_of_maze_explored() > 80:
+            return True
+
+        if self.consecutive_explored_cells >= 3:
+            return True
+
+        # Check for number of steps
+        if self.moves_explore > 15:
+            return True
+
+        # Check for center of the maze:
+        if self.is_at_centers(x, y):
+            return True
+
+        if self.is_starting_location(x, y):
+            return True
+
+        return False
             
         
-            
-        
-        
+    def final_round(self, x, y, heading, sensors):
+        """
+        Returns the correct rotation and maximum numbers of steps that
+         the robot can take to optimize the score while staying on track
+        """
+
+        rotation = None
+        movement = None
+        current_distance = self.terrain.grid[x][y].distance
+
+        adj_distances, adj_visited = self.training.get_adjacent(x, y, heading, sensors, False)
+
+        # Change sensor info to max allowed moves, when it applies
+        sensors = [3 if step > 3 else step for step in sensors]
+
+        for i, steps in enumerate(sensors):
+
+            # If we found a movement, exit and apply it
+            if movement is not None:
+                break
+
+            # Otherwise, iterate through steps to see if one matches with the
+            # next correct and logical distance for that number of steps
+            elif self.is_a_possible_move(adj_distances, adj_visited, i):
+                for idx in range(steps):
+                    step = steps - idx
+                    rotation = rotations[str(i)]
+                    new_direction = self.get_new_dir(rotation)
+                    furthest_distance = self.training.get_dist(x, y, new_direction, step)
+                    if furthest_distance == current_distance - step:
+                        movement = step
+                        break
+
+        return rotation, movement
+
+    def is_a_possible_move(self, adj_distances, adj_visited, i):
+        """
+        Distances are valid if they are not walls, unvisited, or dead ends.
+        """
+        return (adj_visited[i] is not ''
+                and adj_visited[i] is not 'd'
+                and adj_distances[i] is not WALL_VALUE)
+
+    def report_results(self):
+        distance = self.training.grid[0][0].distance
+        percentage = self.training.get_percentage_of_maze_explored()
+        first_round = self.moves_round_1 + self.moves_explore
+        second_round = self.move_round_2
+        print('ALGORITHM USED: {}'.format(self.algorithm.name.upper()))
+        print('EXPLORING AFTER CENTER: {}'.format(self.explore_after_center))
+        print('NUMBER OF MOVES FIRST ROUND: {}'.format(first_round))
+        print('PERCENTAGE OF MAZE EXPLORED: {}%'.format(percentage))
+        print('DISTANCE TO CENTER: {}'.format(distance))
+        print('NUMBER OF MOVES FINAL ROUND: {}'.format(second_round))
+        print('********************************')        
                 
         
                 
