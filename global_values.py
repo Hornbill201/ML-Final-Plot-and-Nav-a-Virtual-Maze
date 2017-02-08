@@ -28,6 +28,9 @@ wall_index = {'l': 0, 'u': 1, 'r': 2, 'd': 3,
 
 wall_reverse = {'u': 3, 'r': 0, 'd': 1, 'l': 2,
               'up': 3, 'right': 0, 'down': 1, 'left': 2}
+              
+opposite_wall = {'0': 2, '1': 3, '2': 0, '3': 1}              
+              
 
 WALL_VALUE = 10000
 MAX_DISTANCES = [WALL_VALUE, WALL_VALUE, WALL_VALUE, WALL_VALUE]

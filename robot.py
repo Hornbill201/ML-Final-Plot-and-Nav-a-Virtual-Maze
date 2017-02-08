@@ -86,8 +86,8 @@ class Robot(object):
         the tester to end the run and return the robot to the start.
         '''
 
-        rotation = 0
-        movement = 0
+        #rotation = 0
+        #movement = 0
         
         x, y, heading = self.get_current_location()
         walls = self.current_walls(x, y, heading, sensors)
@@ -122,7 +122,10 @@ class Robot(object):
             
         return rotation, movement
         
-        
+    
+
+    # location    
+    
     def reset_to_home(self):
         self.location = [0, 0]
         self.heading = 'up'
@@ -131,6 +134,7 @@ class Robot(object):
         heading = self.heading
         x = self.location[0]
         y = self.location[1]
+        #print y
         return x, y, heading
     
     def is_starting_location(self, x, y):
@@ -142,11 +146,13 @@ class Robot(object):
     def is_at_deadend(self, sensors):
         x, y, heading = self.get_current_location()
         
-        adj_distances, adj_visited = self.get_adjacent(x,y,heading,sensors, False)
+        adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors, False)
         
         return sensors == [0,0,0] or adj_distances == MAX_DISTANCES
     
     def current_walls(self, x, y, heading, sensors):
+        #print x
+        #print y
         if self.is_starting_location(x,y):
             walls = [1,0,1,1]
             
@@ -157,8 +163,8 @@ class Robot(object):
             walls = [0,0,0,0]
             wall_sensors = [1 if k == 0 else 0 for k in sensors]
             
-            for i in range(len(sensors)):
-                dir_sensor = dir_sensors(heading)[i]
+            for i in range(len(wall_sensors)):
+                dir_sensor = dir_sensors[heading][i]
                 index = wall_index[dir_sensor]
                 walls[index] = wall_sensors[i]
             
@@ -180,13 +186,27 @@ class Robot(object):
         else:
             movement = int(movement)
             
-            self.heading = self.get_new_dir(rotation)
+            #self.heading = self.get_new_dir(rotation)
+            #print self.heading
+            if rotation == -90:
+                self.heading = dir_sensors[self.heading][0]
+            elif rotation == 90:
+                self.heading = dir_sensors[self.heading][2]
             
+            #print movement
             if movement == -1:
+                #print rotation
+                #print 'aaa'
+                #print dir_move[self.heading][1]
+                #print self.heading
+                #print self.location[0]
+                #print self.location[1]
                 self.location[0] -= dir_move[self.heading][0]
                 self.location[1] -= dir_move[self.heading][1]
             else:
                 while movement > 0:
+                    #print dir_move[self.heading][1]
+                    #print self.heading
                     self.location[0] += dir_move[self.heading][0]
                     self.location[1] += dir_move[self.heading][1]
                     movement -= 1
@@ -204,26 +224,26 @@ class Robot(object):
             rotation, movement = self.explore_after(x,y,heading,sensors)
             self.moves_explore += 1
         
-        elif not self.reach_dest and not self.explore:
+        elif (not self.reach_dest) and (not self.explore):
             if self.algorithm.name  == 'flood-fill' and self.is_at_deadend(sensors):
                 rotation, movement = self.act_on_deadend(x, y, heading)
             else:
                 adj_distances, adj_visited = self.training.get_adjacent(x, y, heading, sensors)
                 valid_index = self.algorithm.get_feasible_dir(adj_distances, adj_visited)
-                rotation, movement = self.convert_index_to_dir(valid_index)
-            self.move_round_1 += 1
+                rotation, movement = self.convert_from_index(valid_index)
+            self.moves_round_1 += 1
         
         else:
-            if self.move_round_2 == 0:
+            if self.moves_round_2 == 0:
                 print "--------- Final Report ---------"
                 self.training.draw()
-            rotation, movement = self.second_round(x,y,heading,sensors)
-            self.move_round_2 += 1
+            rotation, movement = self.final_round(x,y,heading,sensors)
+            self.moves_round_2 += 1
         return rotation, movement
     
     def get_valid_index(self, x, y, heading, sensors, explore):
         if not explore:
-            adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors)\
+            adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors)
             
             valid_index = adj_distances.index(min(adj_distances))
             
@@ -231,7 +251,7 @@ class Robot(object):
             best_index = WALL_VALUE
             
             for i, dist in enumerate(adj_distances):
-                if dist != WALL_VALUE and adj_visited == '':
+                if dist != WALL_VALUE and adj_visited[i] == '':
                     if dist <= possible_distance:
                         best_index = i
                         if best_index == 1:
@@ -242,25 +262,24 @@ class Robot(object):
         else:
             adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors)
                         # Convert WALL_VALUES to -1 (robot will follow max distance)
-            adj_distances = [-1 if dist == WALL_VALUE else dist for dist in
-                             adj_distances]
+            adj_distances = [-1 if dist == WALL_VALUE else dist for dist in adj_distances]
 
             # Get max index (guaranteed to not be a wall)
             valid_index = None
 
             # Prefer cells that have not been visited
             for i, dist in enumerate(adj_distances):
-                if dist != -1 and adj_visited[i] is '':
+                if dist != -1 and adj_visited[i] == '':
                     self.consecutive_explored_cells = 0
                     valid_index = i
                     break
 
-            if valid_index is None:
+            if valid_index == None:
                 self.consecutive_explored_cells += 1
                 possible_candidate = None
                 for i, dist in enumerate(adj_distances):
                     if dist != -1 and adj_visited[i] is '*':
-                        if possible_candidate is None:
+                        if possible_candidate == None:
                             possible_candidate = i
                         else:
                             a = adj_distances[possible_candidate]
@@ -274,7 +293,7 @@ class Robot(object):
                 possible_candidate = None
                 for i, dist in enumerate(adj_distances):
                     if dist != -1 and adj_visited[i] == 'e':
-                        if possible_candidate is None:
+                        if possible_candidate == None:
                             possible_candidate = i
                         else:
                             a = adj_distances[possible_candidate]
@@ -312,14 +331,14 @@ class Robot(object):
             rotation = 'Reset'
             movement = 'Reset'
             self.explore = False
-            self.terrain.set_virtual_walls_for_unvisited()
-            self.terrain.update_dist(last_update=True)
+            self.training.set_virtual_walls_for_unvisited()
+            self.training.update_dist(last_update=True)
 
         else:
 
             # If we reach a dead end:
             if self.is_at_deadend(sensors):
-                rotation, movement = self.deal_with_deadend(x, y, heading)
+                rotation, movement = self.act_on_deadend(x, y, heading)
 
             else:
                 valid_index = self.get_valid_index(x, y, heading, sensors, True)
@@ -330,17 +349,17 @@ class Robot(object):
 
         return rotation, movement       
         
-    def deal_with_deadend(self, x, y, heading):
+    def act_on_deadend(self, x, y, heading):
         rotation = 0
         movement = -1
         
         cell = self.training.grid[x][y]
         
         reverse_direction = dir_reverse[heading]
-        index = wall_index[reverse_direction]
+        index = self.training.get_index_of_wall(reverse_direction)
         cell.virtual_walls[index] = 1
         
-        cell.visited = 'd'
+        cell.visited = 'x'
         cell.distance = WALL_VALUE
         
         self.training.update_virtual_walls(x,y,cell.virtual_walls)
@@ -349,7 +368,7 @@ class Robot(object):
         
     def should_end_exploring(self, x, y):
         
-        if self.terrain.get_percentage_of_maze_explored() > 80:
+        if self.training.get_percentage_of_maze_explored() > 80:
             return True
 
         if self.consecutive_explored_cells >= 3:
@@ -377,7 +396,7 @@ class Robot(object):
 
         rotation = None
         movement = None
-        current_distance = self.terrain.grid[x][y].distance
+        current_distance = self.training.grid[x][y].distance
 
         adj_distances, adj_visited = self.training.get_adjacent(x, y, heading, sensors, False)
 
@@ -408,21 +427,19 @@ class Robot(object):
         """
         Distances are valid if they are not walls, unvisited, or dead ends.
         """
-        return (adj_visited[i] is not ''
-                and adj_visited[i] is not 'd'
-                and adj_distances[i] is not WALL_VALUE)
+        return ((adj_visited[i] != '') and (adj_visited[i] != 'x') and (adj_distances[i] != WALL_VALUE))
 
     def report_results(self):
         distance = self.training.grid[0][0].distance
         percentage = self.training.get_percentage_of_maze_explored()
         first_round = self.moves_round_1 + self.moves_explore
-        second_round = self.move_round_2
-        print('ALGORITHM USED: {}'.format(self.algorithm.name.upper()))
-        print('EXPLORING AFTER CENTER: {}'.format(self.explore_after_center))
-        print('NUMBER OF MOVES FIRST ROUND: {}'.format(first_round))
-        print('PERCENTAGE OF MAZE EXPLORED: {}%'.format(percentage))
+        second_round = self.moves_round_2
+        print('ALGORITHM USING: {}'.format(self.algorithm.name.upper()))
+        print('KEEP EXPLORING WHEN GOING BACK: {}'.format(self.explore_after_center))
+        print('NUMBER OF MOVES EXPLORING ROUND: {}'.format(first_round))
+        print('PERCENTAGE OF CELLS EXPLORED: {}%'.format(percentage))
         print('DISTANCE TO CENTER: {}'.format(distance))
-        print('NUMBER OF MOVES FINAL ROUND: {}'.format(second_round))
+        print('NUMBER OF MOVES SECOND ROUND: {}'.format(second_round))
         print('********************************')        
                 
         

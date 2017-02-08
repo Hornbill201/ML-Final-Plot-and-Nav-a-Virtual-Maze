@@ -1,6 +1,6 @@
 from global_values import WALL_VALUE
 
-class Cell: 
+class Cell(object): 
     ''' 
     This class stands for the cell in the maze. 
     We generate the real-wall and virtual-wall for the the cell
@@ -9,7 +9,7 @@ class Cell:
     visited: ^,>,v,<, d: deadend, *:visited
     '''
     
-    def __inf__(self, real_walls = None, distance = 0, visited = ''):
+    def __init__(self, real_walls = None, distance = 0, visited = ''):
         '''
         real_wall: list of '0'(no wall) and '1'(real wall) [u,r,d,l]
         distance: (int) distance from the current cell to the destination
@@ -67,7 +67,7 @@ class Cell:
         '''
         
         if self.distance == WALL_VALUE:
-            distance = 'x'
+            distance = str('-1')
         else:
             distance = str(self.distance)
         
