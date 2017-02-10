@@ -23,7 +23,7 @@ The implementation consists of four different classes: algorithms, cell, robot, 
 
 * Algorithms: has the logic that enables the robot to decide how to move.
 * Cell: represents a square cell in the maze.
-* Training: representation of the maze from the robot’s view.
+* Training: represents the maze from the robot’s view.
 * Robot: control the robot to move around the maze.
 
 
