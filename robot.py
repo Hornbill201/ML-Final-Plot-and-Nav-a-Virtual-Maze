@@ -50,9 +50,9 @@ class Robot(object):
             )        
         
                 # Explore after reaching center of the maze:
-        if str(sys.argv[3]).lower() == 'true':
+        if str(sys.argv[3]).lower() == 'yes':
             self.explore_after_center = True
-        elif str(sys.argv[3]).lower() == 'false':
+        elif str(sys.argv[3]).lower() == 'no':
             self.explore_after_center = False
         else:
             raise ValueError(
@@ -64,43 +64,15 @@ class Robot(object):
         
         
 
-    def next_move(self, sensors):
-        '''
-        Use this function to determine the next move the robot should make,
-        based on the input from the sensors after its previous move. Sensor
-        inputs are a list of three distances from the robot's left, front, and
-        right-facing sensors, in that order.
-
-        Outputs should be a tuple of two values. The first value indicates
-        robot rotation (if any), as a number: 0 for no rotation, +90 for a
-        90-degree rotation clockwise, and -90 for a 90-degree rotation
-        counterclockwise. Other values will result in no rotation. The second
-        value indicates robot movement, and the robot will attempt to move the
-        number of indicated squares: a positive number indicates forwards
-        movement, while a negative number indicates backwards movement. The
-        robot may move a maximum of three units per turn. Any excess movement
-        is ignored.
-
-        If the robot wants to end a run (e.g. during the first training run in
-        the maze) then returing the tuple ('Reset', 'Reset') will indicate to
-        the tester to end the run and return the robot to the start.
-        '''
-
-        #rotation = 0
-        #movement = 0
-        
+    def next_move(self, sensors):        
         x, y, heading = self.get_current_location()
         walls = self.current_walls(x, y, heading, sensors)
-        
         
         if self.is_at_centers(x, y):
             rotation = 0
             movement = -1
-            
             self.training.update(x, y, heading, walls, self.explore)
-            
             self.reach_dest = True
-            
             self.explore = True
         
         else:
@@ -109,10 +81,8 @@ class Robot(object):
                 self.training.visited_before_reaching_destination.append([x,y])
                 
             self.training.update(x,y,heading, walls, self.explore)
-                
             rotation, movement = self.get_next_move(x,y,heading,sensors)
-                
-        
+            
         self.update_location(rotation, movement)
         if rotation == 'Reset' and movement == 'Reset':
             self.reset_to_home()
@@ -124,7 +94,7 @@ class Robot(object):
         
     
 
-    # location    
+    # update location    
     
     def reset_to_home(self):
         self.location = [0, 0]
@@ -137,18 +107,7 @@ class Robot(object):
         #print y
         return x, y, heading
     
-    def is_starting_location(self, x, y):
-        return x == 0 and y == 0
     
-    def is_at_centers(self, x, y):
-        return [x,y] in self.destination
-    
-    def is_at_deadend(self, sensors):
-        x, y, heading = self.get_current_location()
-        
-        adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors, False)
-        
-        return sensors == [0,0,0] or adj_distances == MAX_DISTANCES
     
     def current_walls(self, x, y, heading, sensors):
         #print x
@@ -179,7 +138,21 @@ class Robot(object):
             return dir_sensors[self.heading][2]
         else:
             return self.heading
+
+
+    def is_starting_location(self, x, y):
+        return x == 0 and y == 0
+    
+    def is_at_centers(self, x, y):
+        return [x,y] in self.destination
+    
+    def is_at_deadend(self, sensors):
+        x, y, heading = self.get_current_location()
         
+        adj_distances, adj_visited = self.training.get_adjacent(x,y,heading,sensors, False)
+        
+        return sensors == [0,0,0] or adj_distances == MAX_DISTANCES    
+    
     def update_location(self, rotation, movement):
         if movement == 'Reset' or rotation == 'Reset':
             return
@@ -235,7 +208,7 @@ class Robot(object):
         
         else:
             if self.moves_round_2 == 0:
-                print "--------- Final Report ---------"
+                print "============ Path Report ============"
                 self.training.draw()
             rotation, movement = self.final_round(x,y,heading,sensors)
             self.moves_round_2 += 1
@@ -359,7 +332,7 @@ class Robot(object):
         index = self.training.get_index_of_wall(reverse_direction)
         cell.virtual_walls[index] = 1
         
-        cell.visited = 'x'
+        cell.visited = 'd'
         cell.distance = WALL_VALUE
         
         self.training.update_virtual_walls(x,y,cell.virtual_walls)
@@ -427,20 +400,21 @@ class Robot(object):
         """
         Distances are valid if they are not walls, unvisited, or dead ends.
         """
-        return ((adj_visited[i] != '') and (adj_visited[i] != 'x') and (adj_distances[i] != WALL_VALUE))
+        return ((adj_visited[i] != '') and (adj_visited[i] != 'd') and (adj_distances[i] != WALL_VALUE))
 
     def report_results(self):
+        explore = str(sys.argv[3]).upper()
         distance = self.training.grid[0][0].distance
         percentage = self.training.get_percentage_of_maze_explored()
         first_round = self.moves_round_1 + self.moves_explore
         second_round = self.moves_round_2
-        print('ALGORITHM USING: {}'.format(self.algorithm.name.upper()))
-        print('KEEP EXPLORING WHEN GOING BACK: {}'.format(self.explore_after_center))
-        print('NUMBER OF MOVES EXPLORING ROUND: {}'.format(first_round))
-        print('PERCENTAGE OF CELLS EXPLORED: {}%'.format(percentage))
-        print('DISTANCE TO CENTER: {}'.format(distance))
+        print('Algorithm: {}'.format(self.algorithm.name.upper()))
+        print('Keep exploring on the ay back to origin: {}'.format(explore))
+        print('Moves in First Run (exploration): {}'.format(first_round))
+        print('Percentage of cells explored: {}%'.format(percentage))
+        print('Distance from origin to center of the path found: {}'.format(distance))
         print('NUMBER OF MOVES SECOND ROUND: {}'.format(second_round))
-        print('********************************')        
+        print('====================================')        
                 
         
                 

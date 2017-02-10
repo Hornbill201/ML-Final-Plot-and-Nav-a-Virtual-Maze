@@ -47,6 +47,7 @@ if __name__ == '__main__':
             if total_time > max_time:
                 run_active = False
                 print "Allotted time exceeded."
+                #testrobot.training.draw()
                 break
 
             # provide robot with sensor information, get actions

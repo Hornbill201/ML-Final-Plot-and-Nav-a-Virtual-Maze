@@ -56,38 +56,18 @@ class FloodFill(Algorithm):
         self.name = 'flood-fill'
         
     def get_feasible_dir(self, adj_distances, adj_visited):
-             # Get min index (guaranteed to not be a wall)
-        valid_index = adj_distances.index(min(adj_distances))
+        valid_dir= adj_distances.index(min(adj_distances))
         possible_distance = WALL_VALUE
         for i, dist in enumerate(adj_distances):
                 # Prefer unvisited cells
             if dist != WALL_VALUE and adj_visited[i] is '':
                 if dist <= possible_distance:
-                    valid_index = i
+                    valid_dir = i
                     smallest_distance = dist
                     possible_distance = smallest_distance
-                    # Index 1 is for the forward direction (the fastest)
-                    if valid_index == 1:
+                    # Index 1: forwarding
+                    # go forward as much as possible 
+                    if valid_dir == 1:
                         break
-        return valid_index
+        return valid_dir
     
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        

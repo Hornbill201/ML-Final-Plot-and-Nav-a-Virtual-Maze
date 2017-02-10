@@ -13,7 +13,7 @@ class Cell(object):
         '''
         real_wall: list of '0'(no wall) and '1'(real wall) [u,r,d,l]
         distance: (int) distance from the current cell to the destination
-        visited: (Boolean) indicate whether this cell has been visited 
+        visited: string indicates whether this cell has been visited 
         '''
         if not real_walls:
             real_walls = [0,0,0,0]
@@ -67,7 +67,7 @@ class Cell(object):
         '''
         
         if self.distance == WALL_VALUE:
-            distance = str('-1')
+            distance = str('x')
         else:
             distance = str(self.distance)
         

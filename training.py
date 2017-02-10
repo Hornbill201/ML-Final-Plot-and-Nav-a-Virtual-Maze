@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 30 14:22:59 2017
-
-@author: Chao Wang
-"""
-
-
 from cell import Cell
 from global_values import (dir_reverse, dir_sensors, wall_reverse, directions, wall_index, MAX_DISTANCES, WALL_VALUE)
 
@@ -30,12 +22,12 @@ class Training:
         center = self.maze_dim/2
         max_dist = self.maze_dim - 2
         
-        # top left half 
+        # lower left half 
         for i in range(center):
             for j in range(center):
                 self.grid[i][j].distance = max_dist - i - j
         
-        # lower left half
+        # top left half
         for i in range(center, self.maze_dim):
             for j in range(center):
                 self.grid[i][j].distance = self.grid[self.maze_dim - i - 1][j].distance
@@ -49,7 +41,7 @@ class Training:
     # update the cell 
     def update(self, x, y, heading, walls, explore):
         '''
-        Here we update the cell
+        Here we update the cell's information
         '''
         cell = self.grid[x][y]
         
@@ -58,19 +50,75 @@ class Training:
             cell.real_walls = walls
             # here we updated the walls of the adjacent's wall
             # since two adjacent cells share the wall
-            self.update_adj_walls(x,y,walls,'real')
-            
-        cell.visited = directions[heading]
-            
-        self.change_visual_prev_cell(cell, explore)
-            
-        self.last_visited_cell = cell
-            
+            self.update_adj_walls(x,y,walls,'real')            
+        cell.visited = directions[heading]            
+        self.change_visual_prev_cell(cell, explore)           
+        self.last_visited_cell = cell            
         self.update_dist()
             
+    # drawing the maze
+    
+    def print_row(self, cells, include_delimiters = True):
+        if include_delimiters:
+            roof = ''
+            frame = '\n'
+            floor = '\n'
+            
+            for cell in cells:
+                roof += cell.roof()
+                frame += cell.frame()
+                floor += cell.floor()
+            res = roof + frame + floor
+        else:
+            frame = ''
+            for cell in cells:
+                frame += cell.frame()
+            res = frame
+        
+        print(res)
+        
+    def print_row_overlap(self, cells):
+        roof = ''
+        frame = '\n'
+        floor = '\n'
+            
+        for cell in cells:
+            roof += cell.roof()
+            frame += cell.frame()
+            floor += cell.floor()
+        res = roof + frame + floor
+    
+        print(res)
+    
+    def draw(self):
+        rows = []
+        for i in range(self.maze_dim):
+            rows.append([x[i] for x in self.grid])
+
+        print_delimiters = True
+        for i, row in enumerate(reversed(rows)):
+            self.print_row(row, print_delimiters)
+            print_delimiters = not print_delimiters  # Flip value
+            
+    
+    def draw_overlap(self):
+        rows = []
+        for i in range(self.maze_dim):
+            rows.append([x[i] for x in self.grid])
+
+        for i, row in enumerate(reversed(rows)):
+            self.print_row_overlap(row)
+
+    def get_percentage_of_maze_explored(self):
+        num_cells_in_maze = self.maze_dim * self.maze_dim
+        num_cells_explored = len(self.visited_before_reaching_destination)
+        return (num_cells_explored * 100) / num_cells_in_maze    
+    
+    
+    # method for updating the locations and directions
     
     def change_visual_prev_cell(self, cur_cell, explore):
-        if (self.last_visited_cell is not None) and (self.last_visited_cell != cur_cell) and (self.last_visited_cell.visited is not 'x'):
+        if (self.last_visited_cell is not None) and (self.last_visited_cell != cur_cell) and (self.last_visited_cell.visited is not 'd'):
             if not explore:
                 self.last_visited_cell.visited = '*'
             else:
@@ -113,15 +161,15 @@ class Training:
         if direction == 'd' or direction == 'down':
             if walls[wall_index['d']] == 0 and self.is_valid_togo(x,y-steps):
                 cell = self.grid[x][y-steps]
-                #dist = cell.distance
-                dist = self.grid[x][y-steps].distance
+                dist = cell.distance
+                #dist = self.grid[x][y-steps].distance
         
         # left
         if direction == 'l' or direction == 'left':
             if walls[wall_index['l']] == 0 and self.is_valid_togo(x-steps,y):
                 cell = self.grid[x-steps][y]
-                #dist = cell.distance
-                dist = self.grid[x-steps][y].distance
+                dist = cell.distance
+                #dist = self.grid[x-steps][y].distance
         
         return dist
         
@@ -166,7 +214,7 @@ class Training:
         '''
         
         distances = list(MAX_DISTANCES)
-        visited = ['','','','']
+        visited = ['']*4
         
         for i in range(len(sensors)):
             if sensors[i] != 0:
@@ -241,7 +289,7 @@ class Training:
                             y_add = y-1
                         
                         cell_add = self.grid[x_add][y_add]
-                        if cell_add.visited != 'x' and self.is_valid_togo(x_add, y_add):
+                        if cell_add.visited != 'd' and self.is_valid_togo(x_add, y_add):
                             cell_location = [x_add, y_add]
                             self.cells_to_check.append(cell_location)
                             
@@ -318,71 +366,3 @@ class Training:
                     for i in range(4):
                         cell.virtual_walls[i] = 1
     
-    # drawing the maze
-    
-    def print_row(self, cells, include_delimiters = True):
-        if include_delimiters:
-            roof = ''
-            frame = '\n'
-            floor = '\n'
-            
-            for cell in cells:
-                roof += cell.roof()
-                frame += cell.frame()
-                floor += cell.floor()
-            res = roof + frame + floor
-        else:
-            frame = ''
-            for cell in cells:
-                frame += cell.frame()
-            res = frame
-        
-        print(res)
-        
-    def print_row_overlap(self, cells):
-        roof = ''
-        frame = '\n'
-        floor = '\n'
-            
-        for cell in cells:
-            roof += cell.roof()
-            frame += cell.frame()
-            floor += cell.floor()
-        res = roof + frame + floor
-    
-        print(res)
-    
-    def draw(self):
-        rows = []
-        for i in range(self.maze_dim):
-            rows.append([x[i] for x in self.grid])
-
-        print_delimiters = True
-        for i, row in enumerate(reversed(rows)):
-            self.print_row(row, print_delimiters)
-            print_delimiters = not print_delimiters  # Flip value
-            
-    
-    def draw_overlap(self):
-        rows = []
-        for i in range(self.maze_dim):
-            rows.append([x[i] for x in self.grid])
-
-        for i, row in enumerate(reversed(rows)):
-            self.print_row_overlap(row)
-
-    def get_percentage_of_maze_explored(self):
-        num_cells_in_maze = self.maze_dim * self.maze_dim
-        num_cells_explored = len(self.visited_before_reaching_destination)
-        return (num_cells_explored * 100) / num_cells_in_maze
-    
-
-
-
-
-
-
-
-
-        
-                
