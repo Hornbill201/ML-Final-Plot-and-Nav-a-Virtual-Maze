@@ -1,7 +1,9 @@
 # Plot-and-Nav-a-Virtual-Maze
 ## Udacity Capstone Projects: Plot and Navigate a Virtual Maze
 
-## How to run the code
+#### All the details can be found at the final repoat in the ``report.pdf`` file. 
+
+### How to run the code
 In order to run the tester.py script, type the following command in the terminal:
 
 ```
