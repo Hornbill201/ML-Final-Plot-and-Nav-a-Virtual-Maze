@@ -29,7 +29,7 @@ The implementation consists of four different classes: algorithms, cell, robot, 
 * Robot: control the robot to move around the maze.
 
 
-#### Requirements
+### Requirements
 
 Python 2.7.X
 
